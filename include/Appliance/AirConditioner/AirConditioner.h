@@ -38,6 +38,25 @@ class AirConditioner : public ApplianceBase {
   Preset getPreset() const { return this->m_preset; }
   const Capabilities &getCapabilities() const { return this->m_capabilities; }
   void displayToggle() { this->m_displayToggle(); }
+
+  // --- New-protocol (0xB0) feature setters: Breezeless / indirect-wind ---
+  // Property tags & encoding taken from the Midea LAN protocol implementation
+  // (midea_ac_lan): breezeless tag=0x0018 (0x01/0x00), indirect-wind ("Breeze
+  // Away") tag=0x0042 (0x02/0x01). Frame body = [0xB0, pack_count, tag_lo,
+  // tag_hi, len, value...]; CRC8 appended by FrameData; sent as DEVICE_CONTROL.
+  void setBreezeless(bool state) {
+    FrameData data{0xB0, 0x01, 0x18, 0x00, 0x01, static_cast<uint8_t>(state ? 0x01 : 0x00)};
+    data.appendCRC();
+    this->m_queueRequestPriority(FrameType::DEVICE_CONTROL, std::move(data),
+        [](FrameData d) -> ResponseStatus { return d.hasID(0xB0) ? RESPONSE_OK : RESPONSE_WRONG; });
+  }
+  void setIndirectWind(bool state) {
+    FrameData data{0xB0, 0x01, 0x42, 0x00, 0x01, static_cast<uint8_t>(state ? 0x02 : 0x01)};
+    data.appendCRC();
+    this->m_queueRequestPriority(FrameType::DEVICE_CONTROL, std::move(data),
+        [](FrameData d) -> ResponseStatus { return d.hasID(0xB0) ? RESPONSE_OK : RESPONSE_WRONG; });
+  }
+
  protected:
   void m_getPowerUsage();
   void m_getCapabilities();

@@ -45,7 +45,8 @@ class AirConditioner : public ApplianceBase {
   // Away") tag=0x0042 (0x02/0x01). Frame body = [0xB0, pack_count, tag_lo,
   // tag_hi, len, value...]; CRC8 appended by FrameData; sent as DEVICE_CONTROL.
   void setBreezeless(bool state) {
-    FrameData data{0xB0, 0x01, 0x18, 0x00, 0x01, static_cast<uint8_t>(state ? 0x01 : 0x00)};
+    // BREEZE_CONTROL (tag 0x0043) enum: 1=OFF, 2=Breeze Away, 3=Breeze Mild, 4=Breezeless
+    FrameData data{0xB0, 0x01, 0x43, 0x00, 0x01, static_cast<uint8_t>(state ? 0x04 : 0x01)};
     data.appendCRC();
     this->m_queueRequestPriority(FrameType::DEVICE_CONTROL, std::move(data),
         [](FrameData d) -> ResponseStatus { return d.hasID(0xB0) ? RESPONSE_OK : RESPONSE_WRONG; });
